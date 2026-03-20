@@ -10,19 +10,25 @@ import os
 FEISHU_WEBHOOK = os.getenv("FEISHU_WEBHOOK", "")
 BING_API_KEY = os.getenv("BING_API_KEY", "")
 
-# 搜索关键词配置
-SEARCH_KEYWORDS = {
-    "招标": [
-        "安徽省 数据标注 招标",
-        "合肥市 数据服务 外包 招标",
-        "安徽省 数字化建设 采购",
-        "合肥市 内容审核 外包",
-    ],
-    "招聘": [
-        "合肥市 残疾人招聘",
-        "合肥市 数据标注 招聘",
-    ]
-}
+# 招标搜索关键词
+BID_KEYWORDS = [
+    "安徽省 数据标注 招标",
+    "合肥市 数据服务 外包 招标",
+    "安徽省 数字化建设 采购",
+    "合肥市 内容审核 外包 招标",
+    "安徽省 数据录入 服务 采购",
+    "合肥市 档案数字化 招标",
+]
+
+# 招聘搜索关键词（适合残疾人）
+JOB_KEYWORDS = [
+    "合肥市 残疾人 招聘",
+    "合肥市 数据标注 招聘",
+    "安徽省 内容审核 招聘",
+    "合肥市 文员 残疾人",
+    "安徽省 客服 居家办公",
+    "合肥市 数据录入 兼职",
+]
 
 # 政府采购网站
 GOV_WEBSITES = [
@@ -31,24 +37,11 @@ GOV_WEBSITES = [
     {"name": "安徽招标网", "url": "http://ah.bidcenter.com.cn"},
 ]
 
-# 重点关注业务类型
-BUSINESS_TYPES = [
-    "切扫分（图书扫描）",
-    "数据标注",
-    "数据录入",
-    "内容审核",
-    "文本标注",
-    "2D/3D标注",
-]
-
-# 目标合作公司
-TARGET_COMPANIES = [
-    "科大讯飞",
-    "作业帮",
-    "小猿搜题",
-    "字节跳动",
-    "百度",
-    "华为",
+# 招聘网站
+JOB_WEBSITES = [
+    {"name": "安徽公共招聘网", "url": "https://www.ah.gov.cn"},
+    {"name": "合肥市人力资源和社会保障局", "url": "https://rsj.hefei.gov.cn"},
+    {"name": "安徽省残疾人就业服务中心", "url": "https://cdpf.ah.gov.cn"},
 ]
 
 
@@ -75,7 +68,7 @@ def search_with_bing_api(keyword: str) -> list:
                     "snippet": item.get("snippet", "")[:100]
                 })
     except Exception as e:
-        print(f"Bing API 搜索失败: {e}")
+        print(f"搜索失败: {e}")
     
     return results
 
@@ -84,11 +77,19 @@ def generate_report() -> str:
     """生成推送报告"""
     now = datetime.now()
     
-    # 尝试Bing API搜索
-    all_bids = []
-    for keyword in SEARCH_KEYWORDS["招标"][:2]:
+    # 搜索招标信息
+    print("正在搜索招标信息...")
+    bid_results = []
+    for keyword in BID_KEYWORDS[:3]:
         results = search_with_bing_api(keyword)
-        all_bids.extend(results)
+        bid_results.extend(results)
+    
+    # 搜索招聘信息
+    print("正在搜索招聘信息...")
+    job_results = []
+    for keyword in JOB_KEYWORDS[:3]:
+        results = search_with_bing_api(keyword)
+        job_results.extend(results)
     
     # 构建报告
     content_parts = [
@@ -96,66 +97,64 @@ def generate_report() -> str:
         "",
         "---",
         "",
-        "## 🔍 请手动检查以下网站",
+        "## 📋 招标信息",
         ""
     ]
     
-    # 网站列表
-    for site in GOV_WEBSITES:
-        content_parts.append(f"- [{site['name']}]({site['url']})")
+    if bid_results:
+        for i, item in enumerate(bid_results[:5], 1):
+            content_parts.append(f"**{i}. [{item['title'][:50]}]({item['url']})**")
+            content_parts.append(f"   {item['snippet']}")
+            content_parts.append("")
+    else:
+        content_parts.append("> 请手动检查以下招标网站：")
+        content_parts.append("")
+        for site in GOV_WEBSITES:
+            content_parts.append(f"- [{site['name']}]({site['url']})")
+        content_parts.append("")
+        content_parts.append("**搜索关键词：**")
+        for kw in BID_KEYWORDS[:3]:
+            content_parts.append(f"- `{kw}`")
+        content_parts.append("")
     
     content_parts.extend([
+        "---",
         "",
-        "**搜索关键词建议：**",
+        "## 👥 招聘信息",
         ""
     ])
     
-    for keyword in SEARCH_KEYWORDS["招标"][:4]:
-        content_parts.append(f"- `{keyword}`")
+    if job_results:
+        for i, item in enumerate(job_results[:5], 1):
+            content_parts.append(f"**{i}. [{item['title'][:50]}]({item['url']})**")
+            content_parts.append(f"   {item['snippet']}")
+            content_parts.append("")
+    else:
+        content_parts.append("> 请手动检查以下招聘网站：")
+        content_parts.append("")
+        for site in JOB_WEBSITES:
+            content_parts.append(f"- [{site['name']}]({site['url']})")
+        content_parts.append("")
+        content_parts.append("**搜索关键词：**")
+        for kw in JOB_KEYWORDS[:3]:
+            content_parts.append(f"- `{kw}`")
+        content_parts.append("")
     
     content_parts.extend([
+        "---",
+        "",
+        "## 💡 操作建议",
+        "",
+        "1. 访问上述网站查看详细信息",
+        "2. 关注适合残疾人的岗位：数据标注、内容审核、数据录入等",
+        "3. 如有合适项目，及时联系相关部门",
         "",
         "---",
         "",
-        "## 📌 重点关注业务",
-        ""
-    ])
-    
-    for biz in BUSINESS_TYPES:
-        content_parts.append(f"- {biz}")
-    
-    content_parts.extend([
-        "",
-        "---",
-        "",
-        "## 🎯 目标合作公司",
-        ""
-    ])
-    
-    for company in TARGET_COMPANIES:
-        content_parts.append(f"- {company}")
-    
-    content_parts.extend([
-        "",
-        "---",
-        "",
-        "## 💡 本周操作建议",
-        "",
-        "1. **检查政府网站**：访问上述招标网站搜索最新项目",
-        "2. **联系目标公司**：主动询问外包需求",
-        "3. **关注业务类型**：数据标注、内容审核等适合残疾人的岗位",
-        "",
-        "---",
-        "",
-        f"⏰ 推送时间: {now.year}年{now.month}月{now.day}日 {now.hour:02d}:{now.minute:02d}",
+        f"⏰ 扫描时间: {now.year}年{now.month}月{now.day}日 {now.hour:02d}:{now.minute:02d}",
         "",
         "🤖 合皖助联智能助手",
-        "",
-        "📌 频率: 每2天推送一次",
-        "",
-        "---",
-        "",
-        "> ⚠️ 由于网络限制，请手动访问上述网站查看最新信息"
+        "📌 每2天推送一次"
     ])
     
     return "\n".join(content_parts)
