@@ -26,11 +26,3 @@
 ```bash
 git clone https://github.com/your-username/hewan-assistant.git
 cd hewan-assistant
-
-### 2. 安装依赖
-
-pip install -r requirements.txt
-
-### 3. 运行脚本
-
-python scripts/auto_push.py
