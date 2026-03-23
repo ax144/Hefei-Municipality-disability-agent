@@ -31,6 +31,6 @@ cd hewan-assistant
 
 pip install -r requirements.txt
 
-3. 运行脚本
+### 3. 运行脚本
 
 python scripts/auto_push.py
