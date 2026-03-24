@@ -3,3 +3,4 @@ coze-coding-dev-sdk>=0.5.11
 coze-coding-utils>=0.2.6
 python-pptx>=1.0.2
 requests>=2.32.0
+python-pptx
