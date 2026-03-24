@@ -266,92 +266,105 @@ class JobMarketScanner:
 
 
 def format_message(data: Dict) -> str:
-    """格式化消息：招聘 → 政策 → 招标 → 产品"""
-    now = datetime.now()
+    """格式化飞书推送消息 - 优化版"""
+    lines = []
     
-    lines = [f"**📅 {now.year}年{now.month}月{now.day}日 合皖助联就业市场动态**", "", "---"]
+    # ===== 标题 =====
+    today = datetime.now().strftime("%Y年%m月%d日")
+    time_now = datetime.now().strftime("%H:%M")
+    
+    lines.append(f"# 📊 {today} 就业市场动态")
+    lines.append("")
+    lines.append(f"> 扫描时间：{time_now} | 有效期：近30天")
+    lines.append("")
+    
+    # ===== 数据概览 =====
+    jobs_count = len(data.get("jobs", []))
+    policy_count = len(data.get("policy", []))
+    bidding_count = len(data.get("bidding", []))
+    products_count = len(data.get("products", []))
+    
+    lines.append("**本次扫描概览**")
+    lines.append("| 类别 | 数量 |")
+    lines.append("|:---:|:---:|")
+    lines.append(f"| 💼 招聘 | {jobs_count} 条 |")
+    lines.append(f"| 📋 政策 | {policy_count} 条 |")
+    lines.append(f"| 📄 招标 | {bidding_count} 条 |")
+    lines.append(f"| 🛍️ 产品 | {products_count} 条 |")
+    lines.append("")
     
     # ===== 招聘信息 =====
-    lines.append("")
-    lines.append("## 💼 招聘信息")
-    lines.append("")
     if data.get("jobs"):
-        for i, j in enumerate(data["jobs"], 1):
-            lines.append(f"**{i}. {j['title']}**")
-            if j.get('company'):
-                lines.append(f"📍 {j['company']}")
-            if j.get('snippet'):
-                lines.append(f"📝 {j['snippet']}")
-            lines.append(f"🔗 [查看详情]({j['url']})")
-            lines.append("")
-    else:
-        lines.append("_暂无新招聘信息_")
+        lines.append("---")
         lines.append("")
-    
-    lines.append("---")
+        lines.append("## 💼 招聘信息")
+        lines.append("")
+        for i, j in enumerate(data["jobs"], 1):
+            lines.append(f"### {i}. {j['title'][:50]}{'...' if len(j['title']) > 50 else ''}")
+            if j.get('company'):
+                lines.append(f"- 🏢 **单位**：{j['company']}")
+            if j.get('date'):
+                lines.append(f"- 📅 **时间**：{j['date']}")
+            if j.get('snippet'):
+                lines.append(f"- 📝 **详情**：{j['snippet'][:80]}...")
+            lines.append(f"- 🔗 [点击查看原文]({j['url']})")
+            lines.append("")
     
     # ===== 政策信息 =====
-    lines.append("")
-    lines.append("## 📋 政策信息")
-    lines.append("")
     if data.get("policy"):
-        for i, p in enumerate(data["policy"], 1):
-            lines.append(f"**{i}. {p['title']}**")
-            if p.get('source'):
-                lines.append(f"📍 {p['source']}")
-            if p.get('snippet'):
-                lines.append(f"📝 {p['snippet']}")
-            lines.append(f"🔗 [查看详情]({p['url']})")
-            lines.append("")
-    else:
-        lines.append("_暂无新政策信息_")
+        lines.append("---")
         lines.append("")
-    
-    lines.append("---")
+        lines.append("## 📋 政策信息")
+        lines.append("")
+        for i, p in enumerate(data["policy"], 1):
+            lines.append(f"### {i}. {p['title'][:50]}{'...' if len(p['title']) > 50 else ''}")
+            if p.get('source'):
+                lines.append(f"- 🏛️ **来源**：{p['source']}")
+            if p.get('date'):
+                lines.append(f"- 📅 **时间**：{p['date']}")
+            if p.get('snippet'):
+                lines.append(f"- 📝 **要点**：{p['snippet'][:80]}...")
+            lines.append(f"- 🔗 [点击查看原文]({p['url']})")
+            lines.append("")
     
     # ===== 招标信息 =====
-    lines.append("")
-    lines.append("## 📄 招标信息")
-    lines.append("")
     if data.get("bidding"):
-        for i, b in enumerate(data["bidding"], 1):
-            lines.append(f"**{i}. {b['title']}**")
-            if b.get('source'):
-                lines.append(f"📍 {b['source']}")
-            if b.get('snippet'):
-                lines.append(f"📝 {b['snippet']}")
-            lines.append(f"🔗 [查看详情]({b['url']})")
-            lines.append("")
-    else:
-        lines.append("_暂无新招标信息_")
+        lines.append("---")
         lines.append("")
-    
-    lines.append("---")
+        lines.append("## 📄 招标/外包信息")
+        lines.append("")
+        for i, b in enumerate(data["bidding"], 1):
+            lines.append(f"### {i}. {b['title'][:50]}{'...' if len(b['title']) > 50 else ''}")
+            if b.get('source'):
+                lines.append(f"- 🏢 **来源**：{b['source']}")
+            if b.get('date'):
+                lines.append(f"- 📅 **时间**：{b['date']}")
+            if b.get('snippet'):
+                lines.append(f"- 📝 **需求**：{b['snippet'][:80]}...")
+            lines.append(f"- 🔗 [点击查看原文]({b['url']})")
+            lines.append("")
     
     # ===== 产品信息 =====
-    lines.append("")
-    lines.append("## 🛍️ 产品信息")
-    lines.append("")
     if data.get("products"):
-        for i, pr in enumerate(data["products"], 1):
-            lines.append(f"**{i}. {pr['title']}**")
-            if pr.get('source'):
-                lines.append(f"📍 {pr['source']}")
-            if pr.get('snippet'):
-                lines.append(f"📝 {pr['snippet']}")
-            lines.append(f"🔗 [查看详情]({pr['url']})")
-            lines.append("")
-    else:
-        lines.append("_暂无新产品信息_")
+        lines.append("---")
         lines.append("")
+        lines.append("## 🛍️ 产品信息")
+        lines.append("")
+        for i, pr in enumerate(data["products"], 1):
+            lines.append(f"### {i}. {pr['title'][:50]}{'...' if len(pr['title']) > 50 else ''}")
+            if pr.get('source'):
+                lines.append(f"- 🏢 **来源**：{pr['source']}")
+            if pr.get('date'):
+                lines.append(f"- 📅 **时间**：{pr['date']}")
+            if pr.get('snippet'):
+                lines.append(f"- 📝 **简介**：{pr['snippet'][:80]}...")
+            lines.append(f"- 🔗 [点击查看原文]({pr['url']})")
+            lines.append("")
     
+    # ===== 页脚 =====
     lines.append("---")
     lines.append("")
-    lines.append(f"⏰ 扫描时间: {now.year}年{now.month}月{now.day}日 {now.hour:02d}:{now.minute:02d}")
-    lines.append("")
-    lines.append("📌 仅推送近30天内的有效信息")
-    lines.append("")
-    lines.append("🤖 合皖助联智能助手 | 每2天推送一次")
+    lines.append("<small>🤖 合皖助联智能助手 | 每2天自动推送</small>")
     
     return "\n".join(lines)
 
